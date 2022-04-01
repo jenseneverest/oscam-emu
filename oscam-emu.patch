@@ -1,7 +1,7 @@
 Index: CMakeLists.txt
 ===================================================================
---- CMakeLists.txt	(revision 11704)
-+++ CMakeLists.txt	(working copy)
+--- CMakeLists.txt	(revisione 11704)
++++ CMakeLists.txt	(copia locale)
 @@ -101,6 +101,7 @@
  		${CMAKE_CURRENT_SOURCE_DIR}/csctapi
  		${CMAKE_CURRENT_SOURCE_DIR}/cscrypt
@@ -70,13 +70,13 @@ Index: CMakeLists.txt
  # disable warning about unused but set variables in gcc 4.6+
  if (CMAKE_COMPILER_IS_GNUCC)
  	execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
-@@ -735,7 +759,22 @@
+@@ -735,8 +759,23 @@
  	endif (HAVE_LIBUSB)
  endif( HAVE_LIBRT OR HAVE_LIBRT_STATIC)
  
 -#--------------------------------------------------------------------------------
 +#-------------------------------------------------------------------------------
-+
+ 
 +if (NOT OSCamOperatingSystem MATCHES "Mac OS X")
 +if (NOT DEFINED ENV{ANDROID_NDK})
 +if (NOT DEFINED ENV{ANDROID_STANDALONE_TOOLCHAIN})
@@ -91,9 +91,10 @@ Index: CMakeLists.txt
 +endif (NOT DEFINED ENV{ANDROID_STANDALONE_TOOLCHAIN})
 +endif (NOT DEFINED ENV{ANDROID_NDK})
 +endif (NOT OSCamOperatingSystem MATCHES "Mac OS X")
- 
++
  #----------------------- installation -----------------------------
  
+ file (GLOB config_files "${CMAKE_CURRENT_SOURCE_DIR}/Distribution/oscam.*")
 @@ -825,4 +864,11 @@
  	endif(STATICLIBUSB AND NOT LIBUSBDIR)
  endif (HAVE_LIBUSB)
@@ -108,8 +109,8 @@ Index: CMakeLists.txt
  message (STATUS "")
 Index: Makefile
 ===================================================================
---- Makefile	(revision 11704)
-+++ Makefile	(working copy)
+--- Makefile	(revisione 11704)
++++ Makefile	(copia locale)
 @@ -65,6 +65,13 @@
  
  LDFLAGS = -Wl,--gc-sections
@@ -166,8 +167,8 @@ Index: Makefile
  | OSCam ver: $(VER) rev: $(SVN_REV) target: $(TARGET)\n\
 Index: config.h
 ===================================================================
---- config.h	(revision 11704)
-+++ config.h	(working copy)
+--- config.h	(revisione 11704)
++++ config.h	(copia locale)
 @@ -1,6 +1,8 @@
  #ifndef CONFIG_H_
  #define CONFIG_H_
@@ -179,8 +180,8 @@ Index: config.h
  #define WEBIF_JQUERY 1
 Index: config.sh
 ===================================================================
---- config.sh	(revision 11704)
-+++ config.sh	(working copy)
+--- config.sh	(revisione 11704)
++++ config.sh	(copia locale)
 @@ -1,6 +1,6 @@
  #!/bin/sh
  
@@ -239,7 +240,7 @@ Index: config.sh
  		2> ${tempfile}
  
  	opt=${?}
-@@ -704,9 +711,19 @@
+@@ -704,11 +711,21 @@
  		revision=`(svnversion -n . 2>/dev/null || printf 0) | sed 's/.*://; s/[^0-9]*$//; s/^$/0/'`
  		if [ "$revision" = "0" ]
  		then
@@ -254,17 +255,55 @@ Index: config.sh
 +		else
 +			echo "$revision-$emuversion"
 +		fi
-+		break
-+	;;
-+	'--emu-version')
-+		grep EMU_VERSION module-emulator-osemu.h | awk '{ print $3 }'
  		break
  	;;
++	'--emu-version')
++		grep EMU_VERSION module-emulator-osemu.h | awk '{ print $3 }'
++		break
++	;;
  	'-O'|'--detect-osx-sdk-version')
+ 		shift
+ 		OSX_VER=${1:-10.10}
+Index: git-svn-diff.sh
+===================================================================
+--- git-svn-diff.sh	(revisione 11704)
++++ git-svn-diff.sh	(copia locale)
+@@ -1,22 +1,11 @@
+ #!/bin/bash
+ # Generate an SVN-compatible diff against the tip of the tracking branch
+ 
+-# Get the tracking branch (if we're on a branch)
+-TRACKING_BRANCH=`git svn info | grep URL | sed -e 's/.*\/branches\///'`
+-
+-# If the tracking branch has 'URL' at the beginning, then the sed wasn't successful
+-# and we'll fall back to the svn-remote config option
+-if [[ "$TRACKING_BRANCH" =~ URL.* ]]
+-then
+-        TRACKING_BRANCH=`git config --get svn-remote.svn.fetch | sed -e 's/.*:refs\/remotes\///'`
+-fi
+-
+ # Get the highest revision number
+-REV=`git svn find-rev $(git rev-list --date-order --max-count=1 $TRACKING_BRANCH)`
+-#REV=`git svn info | grep 'Last Changed Rev:' | sed -E 's/^.*: ([[:digit:]]*)/\1/'`
++REV=`git log -1 --pretty=%B oscam-svn | grep git-svn-id | sed -n -e 's/^.*trunk@\([0-9]*\) .*$/\1/p'`
+ 
+ # Then do the diff from the highest revision on the current branch and convert to SVN format
+-git diff --no-prefix --no-indent-heuristic $(git rev-list --date-order --max-count=1 $TRACKING_BRANCH) $* |
++git diff --no-prefix --no-indent-heuristic $(git rev-list --date-order --max-count=1 oscam-svn) $*  -- :^.*  :^git-svn-diff.sh |
+ sed -e "/--- \/dev\/null/{ N; s|^--- /dev/null\n+++ \(.*\)|--- \1	(nonexistent)\n+++ \1	(working copy)|;n}" \
+     -e "s/^--- .*/&	(revision $REV)/" \
+     -e "s/^+++ .*/&	(working copy)/" \
+@@ -24,4 +13,4 @@
+     -e "s/^diff --git [^[:space:]]*/Index:/" \
+     -e "s/^index.*/===================================================================/" \
+     -e "/^new file mode [0-9]\+$/d" \
+-    -e "/^deleted file mode [0-9]\+$/d"
+\ No newline at end of file
++    -e "/^deleted file mode [0-9]\+$/d"
 Index: globals.h
 ===================================================================
---- globals.h	(revision 11704)
-+++ globals.h	(working copy)
+--- globals.h	(revisione 11704)
++++ globals.h	(copia locale)
 @@ -393,7 +393,7 @@
  #define CS_ECM_RINGBUFFER_MAX	0x10	// max size for ECM last responsetimes ringbuffer. Keep this set to power of 2 values!
  
@@ -284,8 +323,8 @@ Index: globals.h
  	LLIST			*emmstat;						// emm stats
 Index: module-dvbapi.c
 ===================================================================
---- module-dvbapi.c	(revision 11704)
-+++ module-dvbapi.c	(working copy)
+--- module-dvbapi.c	(revisione 11704)
++++ module-dvbapi.c	(copia locale)
 @@ -2643,6 +2643,8 @@
  	er->vpid   = demux[demux_id].ECMpids[pid].VPID;
  	er->pmtpid = demux[demux_id].pmtpid;
@@ -295,7 +334,7 @@ Index: module-dvbapi.c
  	er->msgid  = msgid;
  
  #ifdef WITH_STAPI5
-@@ -2690,19 +2692,30 @@
+@@ -2690,13 +2692,14 @@
  		if(caid_is_fake(demux[demux_id].ECMpids[pid].CAID) || caid_is_biss_fixed(demux[demux_id].ECMpids[pid].CAID))
  		{
  			int32_t j, n;
@@ -313,6 +352,7 @@ Index: module-dvbapi.c
  			{
  				i2b_buf(2, demux[demux_id].STREAMpids[j], er->ecm + n);
  				er->ecm[2] += 2;
+@@ -2703,6 +2706,16 @@
  				er->ecmlen += 2;
  			}
  
@@ -332,7 +372,7 @@ Index: module-dvbapi.c
 Index: module-emulator-biss.c
 ===================================================================
 --- module-emulator-biss.c	(nonexistent)
-+++ module-emulator-biss.c	(working copy)
++++ module-emulator-biss.c	(copia locale)
 @@ -0,0 +1,883 @@
 +#define MODULE_LOG_PREFIX "emu"
 +
@@ -1220,7 +1260,7 @@ Index: module-emulator-biss.c
 Index: module-emulator-biss.h
 ===================================================================
 --- module-emulator-biss.h	(nonexistent)
-+++ module-emulator-biss.h	(working copy)
++++ module-emulator-biss.h	(copia locale)
 @@ -0,0 +1,22 @@
 +#ifndef MODULE_EMULATOR_BISS_H
 +#define MODULE_EMULATOR_BISS_H
@@ -1247,7 +1287,7 @@ Index: module-emulator-biss.h
 Index: module-emulator-cryptoworks.c
 ===================================================================
 --- module-emulator-cryptoworks.c	(nonexistent)
-+++ module-emulator-cryptoworks.c	(working copy)
++++ module-emulator-cryptoworks.c	(copia locale)
 @@ -0,0 +1,688 @@
 +#define MODULE_LOG_PREFIX "emu"
 +
@@ -1940,7 +1980,7 @@ Index: module-emulator-cryptoworks.c
 Index: module-emulator-cryptoworks.h
 ===================================================================
 --- module-emulator-cryptoworks.h	(nonexistent)
-+++ module-emulator-cryptoworks.h	(working copy)
++++ module-emulator-cryptoworks.h	(copia locale)
 @@ -0,0 +1,10 @@
 +#ifndef MODULE_EMULATOR_CRYPTOWORKS_H
 +#define MODULE_EMULATOR_CRYPTOWORKS_H
@@ -1955,7 +1995,7 @@ Index: module-emulator-cryptoworks.h
 Index: module-emulator-director.c
 ===================================================================
 --- module-emulator-director.c	(nonexistent)
-+++ module-emulator-director.c	(working copy)
++++ module-emulator-director.c	(copia locale)
 @@ -0,0 +1,642 @@
 +#define MODULE_LOG_PREFIX "emu"
 +
@@ -2602,7 +2642,7 @@ Index: module-emulator-director.c
 Index: module-emulator-director.h
 ===================================================================
 --- module-emulator-director.h	(nonexistent)
-+++ module-emulator-director.h	(working copy)
++++ module-emulator-director.h	(copia locale)
 @@ -0,0 +1,11 @@
 +#ifndef MODULE_EMULATOR_DIRECTOR_H
 +#define MODULE_EMULATOR_DIRECTOR_H
@@ -2618,7 +2658,7 @@ Index: module-emulator-director.h
 Index: module-emulator-irdeto.c
 ===================================================================
 --- module-emulator-irdeto.c	(nonexistent)
-+++ module-emulator-irdeto.c	(working copy)
++++ module-emulator-irdeto.c	(copia locale)
 @@ -0,0 +1,602 @@
 +#define MODULE_LOG_PREFIX "emu"
 +
@@ -3225,7 +3265,7 @@ Index: module-emulator-irdeto.c
 Index: module-emulator-irdeto.h
 ===================================================================
 --- module-emulator-irdeto.h	(nonexistent)
-+++ module-emulator-irdeto.h	(working copy)
++++ module-emulator-irdeto.h	(copia locale)
 @@ -0,0 +1,15 @@
 +#ifndef MODULE_EMULATOR_IRDETO_H
 +#define MODULE_EMULATOR_IRDETO_H
@@ -3245,7 +3285,7 @@ Index: module-emulator-irdeto.h
 Index: module-emulator-nagravision.c
 ===================================================================
 --- module-emulator-nagravision.c	(nonexistent)
-+++ module-emulator-nagravision.c	(working copy)
++++ module-emulator-nagravision.c	(copia locale)
 @@ -0,0 +1,376 @@
 +#define MODULE_LOG_PREFIX "emu"
 +
@@ -3626,7 +3666,7 @@ Index: module-emulator-nagravision.c
 Index: module-emulator-nagravision.h
 ===================================================================
 --- module-emulator-nagravision.h	(nonexistent)
-+++ module-emulator-nagravision.h	(working copy)
++++ module-emulator-nagravision.h	(copia locale)
 @@ -0,0 +1,10 @@
 +#ifndef MODULE_EMULATOR_NAGRAVISION_H
 +#define MODULE_EMULATOR_NAGRAVISION_H
@@ -3641,7 +3681,7 @@ Index: module-emulator-nagravision.h
 Index: module-emulator-osemu.c
 ===================================================================
 --- module-emulator-osemu.c	(nonexistent)
-+++ module-emulator-osemu.c	(working copy)
++++ module-emulator-osemu.c	(copia locale)
 @@ -0,0 +1,972 @@
 +#define MODULE_LOG_PREFIX "emu"
 +
@@ -4618,7 +4658,7 @@ Index: module-emulator-osemu.c
 Index: module-emulator-osemu.h
 ===================================================================
 --- module-emulator-osemu.h	(nonexistent)
-+++ module-emulator-osemu.h	(working copy)
++++ module-emulator-osemu.h	(copia locale)
 @@ -0,0 +1,95 @@
 +#ifndef MODULE_EMULATOR_OSEMU_H_
 +#define MODULE_EMULATOR_OSEMU_H_
@@ -4718,7 +4758,7 @@ Index: module-emulator-osemu.h
 Index: module-emulator-powervu.c
 ===================================================================
 --- module-emulator-powervu.c	(nonexistent)
-+++ module-emulator-powervu.c	(working copy)
++++ module-emulator-powervu.c	(copia locale)
 @@ -0,0 +1,2716 @@
 +#define MODULE_LOG_PREFIX "emu"
 +
@@ -7439,7 +7479,7 @@ Index: module-emulator-powervu.c
 Index: module-emulator-powervu.h
 ===================================================================
 --- module-emulator-powervu.h	(nonexistent)
-+++ module-emulator-powervu.h	(working copy)
++++ module-emulator-powervu.h	(copia locale)
 @@ -0,0 +1,59 @@
 +#ifndef MODULE_EMULATOR_POWERVU_H
 +#define MODULE_EMULATOR_POWERVU_H
@@ -7503,7 +7543,7 @@ Index: module-emulator-powervu.h
 Index: module-emulator-streamserver.c
 ===================================================================
 --- module-emulator-streamserver.c	(nonexistent)
-+++ module-emulator-streamserver.c	(working copy)
++++ module-emulator-streamserver.c	(copia locale)
 @@ -0,0 +1,1812 @@
 +#define MODULE_LOG_PREFIX "emu"
 +
@@ -9320,7 +9360,7 @@ Index: module-emulator-streamserver.c
 Index: module-emulator-streamserver.h
 ===================================================================
 --- module-emulator-streamserver.h	(nonexistent)
-+++ module-emulator-streamserver.h	(working copy)
++++ module-emulator-streamserver.h	(copia locale)
 @@ -0,0 +1,90 @@
 +#ifndef MODULE_EMULATOR_STREAMSERVER_H_
 +#define MODULE_EMULATOR_STREAMSERVER_H_
@@ -9415,7 +9455,7 @@ Index: module-emulator-streamserver.h
 Index: module-emulator-viaccess.c
 ===================================================================
 --- module-emulator-viaccess.c	(nonexistent)
-+++ module-emulator-viaccess.c	(working copy)
++++ module-emulator-viaccess.c	(copia locale)
 @@ -0,0 +1,1183 @@
 +#define MODULE_LOG_PREFIX "emu"
 +
@@ -10603,7 +10643,7 @@ Index: module-emulator-viaccess.c
 Index: module-emulator-viaccess.h
 ===================================================================
 --- module-emulator-viaccess.h	(nonexistent)
-+++ module-emulator-viaccess.h	(working copy)
++++ module-emulator-viaccess.h	(copia locale)
 @@ -0,0 +1,11 @@
 +#ifndef MODULE_EMULATOR_VIACCESS_H
 +#define MODULE_EMULATOR_VIACCESS_H
@@ -10619,7 +10659,7 @@ Index: module-emulator-viaccess.h
 Index: module-emulator.c
 ===================================================================
 --- module-emulator.c	(nonexistent)
-+++ module-emulator.c	(working copy)
++++ module-emulator.c	(copia locale)
 @@ -0,0 +1,904 @@
 +#define MODULE_LOG_PREFIX "emu"
 +
@@ -11527,8 +11567,8 @@ Index: module-emulator.c
 +#endif // WITH_EMU
 Index: oscam.c
 ===================================================================
---- oscam.c	(revision 11704)
-+++ oscam.c	(working copy)
+--- oscam.c	(revisione 11704)
++++ oscam.c	(copia locale)
 @@ -41,6 +41,11 @@
  #include "reader-common.h"
  #include "module-gbox.h"
@@ -11572,8 +11612,8 @@ Index: oscam.c
  	coolapi_close_all();
 Index: webif/config/dvbapi.html
 ===================================================================
---- webif/config/dvbapi.html	(revision 11704)
-+++ webif/config/dvbapi.html	(working copy)
+--- webif/config/dvbapi.html	(revisione 11704)
++++ webif/config/dvbapi.html	(copia locale)
 @@ -56,7 +56,7 @@
  			</TD>
  		</TR>
